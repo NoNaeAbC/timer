@@ -118,17 +118,17 @@ struct DebugStateTracker {
 #endif
 
 /**
-
-Quick and dirty timing tool.
-
-*/
+ *
+ * Quick and dirty timing tool.
+ *
+ */
 
 /*
-TODO:
-    - loop sections
-    - printing formats
-    - multithreaded flow graph
-*/
+ *TODO:
+ *    - loop sections
+ *    - printing formats
+ *    - multithreaded flow graph
+ */
 
 
 inline uint64_t get_time_ns() {
@@ -218,8 +218,8 @@ struct Timer : protected DebugStateTracker {
 #endif
 
 	/**
-    Initialize reference point from where the measurements start. Call only once.
-    */
+	 * Initialize reference point from where the measurements start. Call only once.
+	 */
 	void initialize() {
 		debug_init();
 		add();
@@ -238,8 +238,8 @@ struct Timer : protected DebugStateTracker {
 	}
 
 	/**
-    Add a named event. Must be called after initialize.
-     */
+	 * Add a named event. Must be called after initialize.
+	 */
 	const Timer &add(NAME_TYPE name) {
 		/*
 		 * This optimization is not tested well.
@@ -261,7 +261,7 @@ struct Timer : protected DebugStateTracker {
 	 * Note this naming scheme for each thread is not at all guaranteed to be equal to other names.
 	 * We name all threads which ever called add() from 0 to n-1.
 	 */
-	[[nodiscard]] int get_thread_name(const std::thread::id &id_) const {
+	[[nodiscard]] int get_thread_name([[maybe_unused]] const std::thread::id &id_) const {
 #ifdef TIMER_THREADS
 		int i = 0;
 		for (auto &thread_id: thread_ids) {
@@ -289,8 +289,8 @@ struct Timer : protected DebugStateTracker {
 	}
 
 	/**
-     * Add an unnamed event. Must be called after initialize.
-     */
+	 * Add an unnamed event. Must be called after initialize.
+	 */
 	const Timer &add() {
 		if constexpr (std::is_convertible<int, NAME_TYPE>::value) {
 			add(id++);
@@ -314,28 +314,30 @@ struct Timer : protected DebugStateTracker {
 		return TIME_STAMP_TYPE::get_diff(time_stamps[index - 1], time_stamps[index]);
 	}
 
-	[[nodiscard]] std::string thread_output_formatter(const std::thread::id id_) const {
+	[[nodiscard]] std::string thread_output_formatter([[maybe_unused]] const TIME_STAMP_TYPE &time_stamp) const {
 		if (!has_threads()) { return ""; }
 		static std::string result;
-		result = " in thread : " + std::to_string(get_thread_name(id_));
+#ifdef TIMER_THREADS
+		result = " in thread : " + std::to_string(get_thread_name(time_stamp.thread_id));
+#endif
 		return result;
 	}
 
 	/**
-     * Print information about the last measurement.
-     */
+	 * Print information about the last measurement.
+	 */
 	void print_current() const {
 		debug_check_if_loggable();
 		const int index = time_stamps.size() - 1;
 		std::cout << "Timer : " << time_stamps[index].name << " after "
 				  << TIME_STAMP_TYPE::to_string(get_time_since_last(index)) << " at "
 				  << TIME_STAMP_TYPE::to_string(get_time_since_init(index))
-				  << thread_output_formatter(time_stamps[index].thread_id) << "\n";
+				  << thread_output_formatter(time_stamps[index]) << "\n";
 	}
 
 	/**
-     * Log all measurements
-     */
+	 * Log all measurements
+	 */
 	void log() const {
 		const int length = time_stamps.size();
 		std::cout << "Timer :\n";
@@ -343,7 +345,7 @@ struct Timer : protected DebugStateTracker {
 			const auto time_since_last = TIME_STAMP_TYPE::to_string(get_time_since_last(i));
 			const auto time_since_init = TIME_STAMP_TYPE::to_string(get_time_since_init(i));
 			std::cout << "\t" << time_stamps[i].name << " after " << time_since_last << " at " << time_since_init
-					  << thread_output_formatter(time_stamps[i].thread_id) << "\n";
+					  << thread_output_formatter(time_stamps[i]) << "\n";
 		}
 	}
 };
