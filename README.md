@@ -29,3 +29,11 @@ variables use snake_case. clang-format is required to contribute to this project
 
 Comments starting with /** are useful for the user of the library and usually mark functions you should.
 /* comments are intended for contributors and developers and usually mark functions you shouldn't.
+All comments must follow the following style:
+
+```cpp
+/**
+ * This is a comment for the user of the library.
+ */
+```
+They also need to be indented with tabs onto the current indentation level.

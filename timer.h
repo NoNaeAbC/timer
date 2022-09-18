@@ -118,17 +118,17 @@ struct DebugStateTracker {
 #endif
 
 /**
-
-Quick and dirty timing tool.
-
-*/
+ *
+ * Quick and dirty timing tool.
+ *
+ */
 
 /*
-TODO:
-    - loop sections
-    - printing formats
-    - multithreaded flow graph
-*/
+ *TODO:
+ *    - loop sections
+ *    - printing formats
+ *    - multithreaded flow graph
+ */
 
 
 inline uint64_t get_time_ns() {
@@ -218,8 +218,8 @@ struct Timer : protected DebugStateTracker {
 #endif
 
 	/**
-    Initialize reference point from where the measurements start. Call only once.
-    */
+	 * Initialize reference point from where the measurements start. Call only once.
+	 */
 	void initialize() {
 		debug_init();
 		add();
@@ -238,8 +238,8 @@ struct Timer : protected DebugStateTracker {
 	}
 
 	/**
-    Add a named event. Must be called after initialize.
-     */
+	 * Add a named event. Must be called after initialize.
+	 */
 	const Timer &add(NAME_TYPE name) {
 		/*
 		 * This optimization is not tested well.
@@ -289,8 +289,8 @@ struct Timer : protected DebugStateTracker {
 	}
 
 	/**
-     * Add an unnamed event. Must be called after initialize.
-     */
+	 * Add an unnamed event. Must be called after initialize.
+	 */
 	const Timer &add() {
 		if constexpr (std::is_convertible<int, NAME_TYPE>::value) {
 			add(id++);
@@ -322,8 +322,8 @@ struct Timer : protected DebugStateTracker {
 	}
 
 	/**
-     * Print information about the last measurement.
-     */
+	 * Print information about the last measurement.
+	 */
 	void print_current() const {
 		debug_check_if_loggable();
 		const int index = time_stamps.size() - 1;
@@ -334,8 +334,8 @@ struct Timer : protected DebugStateTracker {
 	}
 
 	/**
-     * Log all measurements
-     */
+	 * Log all measurements
+	 */
 	void log() const {
 		const int length = time_stamps.size();
 		std::cout << "Timer :\n";
