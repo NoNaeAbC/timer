@@ -33,6 +33,90 @@
 #define TIMER_THREADS
 #endif
 
+
+/**
+ * Debug mode:
+ * 		This checks valid usage of the interfaces.
+ * 		Enabled by "#define TIMER_DEBUG".
+ * 		This can enable the use of assertions.
+ * 		May be useful in early stages of development, or when errors are encountered.
+ */
+#ifdef TIMER_DEBUG
+
+#include <csignal>
+/*
+ * I'm grateful if someone improves this.
+ */
+void print_stacktrace_and_exit() {
+	raise(SIGSEGV);
+	std::terminate();
+}
+
+/*
+ * The key (and for now only) feature of this extension, is the (currently non generic) DebugStateTracker.
+ * It Tracks the state of the program, and can be used to detect errors.
+ * In theory, a state tracker tracks a state representation(bool or int) and a state name.
+ * There are 2 function types for each state:
+ * 		- update: changes the state
+ * 		- check: checks if the state is as expected
+ */
+struct DebugStateTracker {
+	bool initialized      = false;
+	int  number_of_events = 0;
+
+	/*
+	 * Check for initialization.
+	 */
+
+	// state update function
+	void debug_init() {
+		if (initialized) {
+			std::cerr << "DebugStateTracker::init() called twice" << std::endl;
+			print_stacktrace_and_exit();
+		}
+		initialized = true;
+	}
+
+	// state check function
+	void debug_check_if_initialized() const {
+		if (!initialized) {
+			std::cerr << "add() called before init()" << std::endl;
+			print_stacktrace_and_exit();
+		}
+	}
+
+	/*
+	 * Check for sufficient number of events.
+	 */
+
+	// state update function
+	void debug_add_event() { number_of_events++; }
+
+	// state check function
+	void debug_check_if_loggable() const {
+		if (number_of_events <= 1) { // First one marks initialization
+			std::cerr << "print_current() called without ever adding events" << std::endl;
+			print_stacktrace_and_exit();
+		}
+	}
+};
+
+#else
+struct DebugStateTracker {
+	void debug_init() const { /* no-op */
+	}
+
+	void debug_check_if_initialized() const { /* no-op */
+	}
+
+	void debug_add_event() const { /* no-op */
+	}
+
+	void debug_check_if_loggable() const { /* no-op */
+	}
+};
+#endif
+
 /**
 
 Quick and dirty timing tool.
@@ -121,7 +205,7 @@ struct CodeSectionTimer {
  * It can be one of int, std::string, const char*. Other types should work as well, but are not tested.
 */
 template<class NAME_TYPE = int>
-struct Timer {
+struct Timer : protected DebugStateTracker {
 	using TIME_STAMP_TYPE = TimeStamp<NAME_TYPE>;
 	std::vector<TIME_STAMP_TYPE> time_stamps{};
 
@@ -136,9 +220,14 @@ struct Timer {
 	/**
     Initialize reference point from where the measurements start. Call only once.
     */
-	void initialize() { add(); }
+	void initialize() {
+		debug_init();
+		add();
+	}
 
 	void add_thread_unsafe(NAME_TYPE name) {
+		debug_check_if_initialized();
+		debug_add_event();
 #ifdef TIMER_THREADS
 		const auto thread_id = std::this_thread::get_id();
 		thread_ids.insert(thread_id);
@@ -236,6 +325,7 @@ struct Timer {
      * Print information about the last measurement.
      */
 	void print_current() const {
+		debug_check_if_loggable();
 		const int index = time_stamps.size() - 1;
 		std::cout << "Timer : " << time_stamps[index].name << " after "
 				  << TIME_STAMP_TYPE::to_string(get_time_since_last(index)) << " at "
