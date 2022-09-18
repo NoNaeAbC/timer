@@ -242,19 +242,10 @@ struct Timer : protected DebugStateTracker {
 	 * Add a named event. Must be called after initialize.
 	 */
 	const Timer &add(NAME_TYPE name) {
-		/*
-		 * This optimization is not tested well.
-		 * The Idea is to disable multithreading dynamically, if the user does not use it.
-		 * It could happen, that there is a race condition, on the first call if add().
-		 */
-		if (has_threads()) {
-#ifdef TIMER_THREADS // has_threads() returns always false if !TIMER_THREADS
-			std::lock_guard lock(multithreading_guard);
-			add_thread_unsafe(name);
+#ifdef TIMER_THREADS
+		std::lock_guard lock(multithreading_guard);
 #endif
-		} else {
-			add_thread_unsafe(name);
-		}
+		add_thread_unsafe(name);
 		return *this;
 	}
 

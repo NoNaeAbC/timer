@@ -6,7 +6,7 @@ run: compile_example
 compile_example: example.cpp timer.h
 	g++ -Wall -Wextra example.cpp -Ofast -std=c++20
 
-compile_example_sanitized: example.cpp timer.h
+compile_example_sanitized: example.cpp timer.h# debug build
 	g++ -Wall -Wextra example.cpp -Ofast -std=c++20 -fsanitize=address,undefined -g
 
 test_compile: example.cpp timer.h # This is just to make sure the code compiles
