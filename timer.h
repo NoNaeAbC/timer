@@ -155,7 +155,7 @@ struct TimeStamp {
 	static std::string to_string(uint64_t time) {
 		const auto time_s  = double(time) / 1'000'000'000;
 		const auto time_ms = double(time) / 1'000'000;
-		const auto time_µs = double(time) / 1'000;
+		const auto time_MICRO_PLS_DO_NOT_USE_DEPRICATED_GCC_s = double(time) / 1'000;
 		const auto time_ns = double(time);
 
 		std::ostringstream result;
@@ -164,7 +164,7 @@ struct TimeStamp {
 		} else if (time >= 100'000) {
 			result << time_ms << "ms";
 		} else if (time >= 100) {
-			result << time_µs << "µs";
+			result << time_MICRO_PLS_DO_NOT_USE_DEPRICATED_GCC_s << "µs";
 		} else {
 			result << time_ns << "ns";
 		}
