@@ -24,3 +24,8 @@ Print the log the execution time with "Timer.log();".
 
 The code is formatted with clang-format. The configuration is in .clang-format. Structs use CamelCase, functions and
 variables use snake_case. clang-format is required to contribute to this project.
+
+## Comment style
+
+Comments starting with /** are useful for the user of the library and usually mark functions you should.
+/* comments are intended for contributors and developers and usually mark functions you shouldn't.
