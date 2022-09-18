@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <mutex>
 #include <set>
 #include <sstream>
 #include <string>
@@ -153,10 +154,10 @@ struct TimeStamp {
 
 
 	static std::string to_string(uint64_t time) {
-		const auto time_s  = double(time) / 1'000'000'000;
-		const auto time_ms = double(time) / 1'000'000;
-		const auto time_µs = double(time) / 1'000;
-		const auto time_ns = double(time);
+		const auto time_s                                     = double(time) / 1'000'000'000;
+		const auto time_ms                                    = double(time) / 1'000'000;
+		const auto time_MICRO_PLS_DO_NOT_USE_DEPRICATED_GCC_s = double(time) / 1'000;
+		const auto time_ns                                    = double(time);
 
 		std::ostringstream result;
 		if (time >= 100'000'000) {
@@ -164,7 +165,7 @@ struct TimeStamp {
 		} else if (time >= 100'000) {
 			result << time_ms << "ms";
 		} else if (time >= 100) {
-			result << time_µs << "µs";
+			result << time_MICRO_PLS_DO_NOT_USE_DEPRICATED_GCC_s << "µs";
 		} else {
 			result << time_ns << "ns";
 		}
@@ -248,7 +249,7 @@ struct Timer : protected DebugStateTracker {
 		 */
 		if (has_threads()) {
 #ifdef TIMER_THREADS // has_threads() returns always false if !TIMER_THREADS
-			std::lock_guard<std::mutex> lock(multithreading_guard);
+			std::lock_guard lock(multithreading_guard);
 			add_thread_unsafe(name);
 #endif
 		} else {
