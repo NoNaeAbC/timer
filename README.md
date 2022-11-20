@@ -13,7 +13,7 @@ See example.cpp for usage.
 ### CodeSectionTimer
 
 The purpose of the code section timer is, to log the execution time of the function.
-To use it put CODE_SECTION_TIMER; at the beginning of the function.
+To use it, put "CODE_SECTION_TIMER;" at the beginning of the function/scope.
 
 ### Timer
 
@@ -27,8 +27,9 @@ variables use snake_case. clang-format is required to contribute to this project
 
 ## Comment style
 
-Comments starting with /** are useful for the user of the library and usually mark functions you should.
-/* comments are intended for contributors and developers and usually mark functions you shouldn't.
+Comments starting with /** are useful for the user of the library
+and usually mark functions you should call from outside.
+/* comments are intended for contributors and developers and usually mark functions you shouldn't call.
 All comments must follow the following style:
 
 ```cpp

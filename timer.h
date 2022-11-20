@@ -23,7 +23,7 @@
  *
  * 		Q: Do the logging functions need thread safety?
  * 		A: No, as the main idea is to call log in the end of the program/parallel section.
- * 		   Also logging does not crash the program. The user can still sync its on his own.
+ * 		   Also logging does not crash the program. The user can still sync it on it's own.
  * 		   This may change in the future, when we expand the logging functionality.
  */
 #ifndef DISABLE_TIMER_THREADS
@@ -69,6 +69,11 @@ struct DebugStateTracker {
 	 * Check for initialization.
 	 */
 
+	void debug_reset() {
+		initialized      = false;
+		number_of_events = 0;
+	}
+
 	// state update function
 	void debug_init() {
 		if (initialized) {
@@ -104,6 +109,10 @@ struct DebugStateTracker {
 
 #else
 struct DebugStateTracker {
+
+	void debug_reset() { /* no-op */
+	}
+
 	void debug_init() const { /* no-op */
 	}
 
@@ -132,7 +141,7 @@ struct DebugStateTracker {
  */
 
 
-inline uint64_t get_time_ns() {
+inline int64_t get_time_ns() {
 	using namespace std::chrono;
 	return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
 }
@@ -140,7 +149,7 @@ inline uint64_t get_time_ns() {
 template<class NAME_TYPE = int>
 struct TimeStamp {
 	const NAME_TYPE name;
-	const uint64_t  time_stamp = get_time_ns();
+	const int64_t   time_stamp = get_time_ns();
 #ifdef TIMER_THREADS
 	const std::thread::id thread_id;
 
@@ -150,14 +159,20 @@ struct TimeStamp {
 	explicit TimeStamp(NAME_TYPE id) : name(id) {}
 #endif
 
-	static uint64_t get_diff(TimeStamp first, TimeStamp last) { return last.time_stamp - first.time_stamp; }
+	static int64_t get_diff(TimeStamp first, TimeStamp last) { return last.time_stamp - first.time_stamp; }
 
 
-	static std::string to_string(uint64_t time) {
+	static std::string to_string(int64_t time) {
 		const auto time_s                                     = double(time) / 1'000'000'000;
 		const auto time_ms                                    = double(time) / 1'000'000;
 		const auto time_MICRO_PLS_DO_NOT_USE_DEPRICATED_GCC_s = double(time) / 1'000;
 		const auto time_ns                                    = double(time);
+
+		/*
+		 * We map 0.1 ms - 100 ms to ms and 0.1µs - 100µs to µs. Anything higher is in s., lower is in ns.
+		 * Ubuntu uses an old version of GCC, used by CI, which does not support UTF-8. So we don't use μ.
+		 * This will change when we can upgrade the CI to something more recent.
+		 */
 
 		std::ostringstream result;
 		if (time >= 100'000'000) {
@@ -219,9 +234,25 @@ struct Timer : protected DebugStateTracker {
 #endif
 
 	/**
-	 * Initialize reference point from where the measurements start. Call only once.
+	 * @brief Resets the timer.
+	 *
+	 * After calling this function, the timer can be initialized used again. Calling initialize on a timer automatically resets it.
+	 * Therefor there is no need to call this function before calling initialize.
+	 */
+	void reset() {
+		debug_reset();
+		time_stamps.clear();
+		id = 0;
+#ifdef TIMER_THREADS
+		thread_ids.clear();
+#endif
+	}
+
+	/**
+	 * Initialize reference point from where the measurements start. Call only once, if you don't want to reset the timer.
 	 */
 	void initialize() {
+		if (!time_stamps.empty()) { reset(); }
 		debug_init();
 		add();
 	}
@@ -298,11 +329,11 @@ struct Timer : protected DebugStateTracker {
 		return *this;
 	}
 
-	[[nodiscard]] uint64_t get_time_since_init(int index) const {
+	[[nodiscard]] int64_t get_time_since_init(uint64_t index) const {
 		return TIME_STAMP_TYPE::get_diff(time_stamps[0], time_stamps[index]);
 	}
 
-	[[nodiscard]] uint64_t get_time_since_last(int index) const {
+	[[nodiscard]] int64_t get_time_since_last(uint64_t index) const {
 		return TIME_STAMP_TYPE::get_diff(time_stamps[index - 1], time_stamps[index]);
 	}
 
@@ -320,7 +351,7 @@ struct Timer : protected DebugStateTracker {
 	 */
 	void print_current() const {
 		debug_check_if_loggable();
-		const int index = time_stamps.size() - 1;
+		const uint64_t index = time_stamps.size() - 1;
 		std::cout << "Timer : " << time_stamps[index].name << " after "
 				  << TIME_STAMP_TYPE::to_string(get_time_since_last(index)) << " at "
 				  << TIME_STAMP_TYPE::to_string(get_time_since_init(index))
@@ -331,9 +362,9 @@ struct Timer : protected DebugStateTracker {
 	 * Log all measurements
 	 */
 	void log() const {
-		const int length = time_stamps.size();
+		const uint64_t length = time_stamps.size();
 		std::cout << "Timer :\n";
-		for (int i = 1; i < length; i++) {
+		for (uint64_t i = 1; i < length; i++) {
 			const auto time_since_last = TIME_STAMP_TYPE::to_string(get_time_since_last(i));
 			const auto time_since_init = TIME_STAMP_TYPE::to_string(get_time_since_init(i));
 			std::cout << "\t" << time_stamps[i].name << " after " << time_since_last << " at " << time_since_init
